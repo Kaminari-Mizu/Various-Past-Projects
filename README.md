@@ -1,4 +1,5 @@
-This is code for a project I did where an ultrasonic sensor would collect data and send that through Microsoft Azure to an SQL database. 
+This is code for a project I did where an ultrasonic sensor would collect data and send that through Microsoft Azure to an SQL database. This code is only for the Arduino IDE. The Azure setup needs to be done independently, but the resources used are listed below.
+For the SQL, SQL Server Management Studio was used.
 I created it on the basis of ships using this and subsequently make use of the data
 to avoid obstacles in the water in real time. The main components used were an ESP32, two ultrasonic sensors, a DC motor, and a servo motor.
 In Azure I made use of the IoT Hub, SendToSQL and AnalyticStream resources.
