@@ -1,0 +1,118 @@
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(12,11,5,4,3,2);
+#define CONTROL_PIN 6
+float duty = 0.01;
+int i = 0;
+
+float outputITotal = 0;
+float outputVTotal = 0;
+
+float outputIAvg;
+float outputVAvg;
+
+float voutDrop;  
+
+unsigned long prevTime = 0;
+const long interval = 100;
+
+bool displayOne = false; 
+
+void setup()
+{ 
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(CONTROL_PIN, OUTPUT);
+  pinMode(A5, INPUT);
+  pinMode(A4, INPUT);
+  pinMode(A3, INPUT);
+  pinMode(A2, INPUT);
+  lcd.begin(16,2);
+  lcd.print("Jason Saal");
+}
+
+void loop()
+{
+  duty = constrain(duty,0,1);
+  analogWrite(CONTROL_PIN, duty*255);
+  
+  //Voltage Calibrated start
+  float inputI = ((analogRead(A2))/1023.0)*(22.0);
+  float inputV = ((analogRead(A5))/1023.0)*(22.0);
+  float outputI = ((analogRead(A4))/1023.0)*(15.6);
+  float outputV = ((analogRead(A3))/1023.0)*(15.6);
+  
+  if(i <=16){
+    voutDrop = outputI-outputV;
+    outputITotal += voutDrop;
+    outputVTotal += outputV;
+    i++;
+    delayMicroseconds(62.5);
+  }
+  else {  
+  	outputIAvg = abs(outputITotal/16);
+    outputVAvg = outputVTotal/16;
+    
+    i=0;
+	outputITotal = 0;
+	outputVTotal = 0;
+}
+//Voltage Calibrated end 	
+  inputI -= inputV;
+  
+//Start and stop charging begin
+  if(true){
+    if(outputVAvg<=13){
+     duty+= 0.001;
+    }else{ //else statements ensures charge kept at approximately 14.4V
+    duty-= 0.001;  
+  	}
+  }else{
+    if(outputIAvg<=0.095){
+     duty+=0.001;
+    }else{
+    duty-=0.001;
+    }
+  }
+  //Start and stop charging end
+  display(duty*inputV,outputIAvg,inputV,inputI);  //Show voltage charged on LCD //(is the LCD function call)
+}
+
+//LCD setup begin
+void display(float voltOut, float currOut, float voltIn, float currIn) {
+  unsigned long currTime = millis();
+  displayOne = !displayOne;
+  if (currTime - prevTime >= interval) {
+    displayOne = !displayOne;
+    prevTime = currTime;
+    lcd.clear();
+    if(displayOne){
+  	  lcd.print("Vo=");
+      lcd.print(voltOut, 2);
+      lcd.print("V");
+      lcd.setCursor(0, 1);
+      lcd.print("Io= ");
+      if (currOut < 0.1) {
+        currOut *= 1000;
+        lcd.print(currOut, 2);
+        lcd.print("mA ");
+      } else {
+        lcd.print(currOut, 2);
+        lcd.print("A");
+      }
+    }else{ 
+      lcd.print("Vi=");
+      lcd.print(voltIn, 2);
+      lcd.print("V");
+      lcd.setCursor(0, 1);
+      lcd.print("Ii=");
+      if (currIn < 0.1) {
+        currIn *= 1000;
+        lcd.print(currIn, 2);
+        lcd.print("mA");
+      } else {
+        lcd.print(currIn, 2);
+        lcd.print("A");
+      }
+    } 
+  }
+}
+//LCD setup end
